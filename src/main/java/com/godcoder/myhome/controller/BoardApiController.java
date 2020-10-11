@@ -1,52 +1,61 @@
 package com.godcoder.myhome.controller;
 
+import com.godcoder.myhome.model.Board;
+import com.godcoder.myhome.repository.BoardRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.thymeleaf.util.StringUtils;
+
+import java.util.List;
+
 @RestController
-class EmployeeController {
+@RequestMapping("/api")
+class BoardApiController {
 
-    private final EmployeeRepository repository;
+    @Autowired
+    private BoardRepository repository;
 
-    EmployeeController(EmployeeRepository repository) {
-        this.repository = repository;
+    @GetMapping("/boards")
+    List<Board> all(@RequestParam(required = false, defaultValue = "") String title,
+        @RequestParam(required = false, defaultValue = "") String content) {
+        if(StringUtils.isEmpty(title) && StringUtils.isEmpty(content)){
+            return repository.findAll();
+        }
+        else{
+            return repository.findByTitleOrContent(title, content);
+        }
     }
 
-    // Aggregate root
-
-    @GetMapping("/employees")
-    List<Employee> all() {
-        return repository.findAll();
-    }
-
-    @PostMapping("/employees")
-    Employee newEmployee(@RequestBody Employee newEmployee) {
-        return repository.save(newEmployee);
+    @PostMapping("/boards")
+    Board newBoard(@RequestBody Board newBoard) {
+        return repository.save(newBoard);
     }
 
     // Single item
 
-    @GetMapping("/employees/{id}")
-    Employee one(@PathVariable Long id) {
+    @GetMapping("/boards/{id}")
+    Board one(@PathVariable Long id) {
 
-        return repository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException(id));
+        return repository.findById(id).orElse(null);
     }
 
-    @PutMapping("/employees/{id}")
-    Employee replaceEmployee(@RequestBody Employee newEmployee, @PathVariable Long id) {
+    @PutMapping("/boards/{id}")
+    Board replaceBoard(@RequestBody Board newBoard, @PathVariable Long id) {
 
         return repository.findById(id)
-                .map(employee -> {
-                    employee.setName(newEmployee.getName());
-                    employee.setRole(newEmployee.getRole());
-                    return repository.save(employee);
+                .map(Board -> {
+                    Board.setTitle(newBoard.getTitle());
+                    Board.setContent(newBoard.getContent());
+                    return repository.save(Board);
                 })
                 .orElseGet(() -> {
-                    newEmployee.setId(id);
-                    return repository.save(newEmployee);
+                    newBoard.setId(id);
+                    return repository.save(newBoard);
                 });
     }
 
-    @DeleteMapping("/employees/{id}")
-    void deleteEmployee(@PathVariable Long id) {
+    @DeleteMapping("/boards/{id}")
+    void deleteBoard(@PathVariable Long id) {
         repository.deleteById(id);
     }
 }
